@@ -46,6 +46,7 @@ int main_blink_reg() {
 
         for (uint32_t i = 0; i < 1000000; i++);
     }
+    return 0;
 }
 
 int main_button_reg() {
@@ -64,6 +65,7 @@ int main_button_reg() {
             | (button_state << LED_PIN));
 
     }
+    return 0;
 }
 
 int main_blink() {
@@ -76,6 +78,7 @@ int main_blink() {
         GPIOA->ODR ^= LED_PIN_ODR_MASK;
         for (uint32_t i = 0; i < 1000000; i++);                             
     }    
+    return 0;
 }
 
 int main_button() {
@@ -92,6 +95,7 @@ int main_button() {
         GPIOA->ODR = ((GPIOA->ODR & (~LED_PIN_ODR_MASK))
             | ((button_state) << LED_PIN));
     }
+    return 0;
 }
 
 int main(void) {
@@ -119,10 +123,11 @@ int main(void) {
     while(1) {
         char text[] = "hello world \r\n";
         for(int i = 0; text[i] != 0; i++) {
-
+            USART2->TDR = text[i];
+            while(!(USART2->ISR & USART_ISR_TC));
         }
         for (uint32_t i = 0; i < 1000000; i++);
     }
 
-
+    return 0;
 }
