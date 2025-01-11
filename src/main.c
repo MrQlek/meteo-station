@@ -98,7 +98,7 @@ int main_button() {
     return 0;
 }
 
-int main(void) {
+int main_uart_tx() {
     // ENABLE PERIPHERALS CLOCKS
     RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN_Msk;
     RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOAEN_Pos);
@@ -128,6 +128,50 @@ int main(void) {
         }
         for (uint32_t i = 0; i < 1000000; i++);
     }
+    return 0;
+}
 
+void usart2_irq_handler() {
+    uint32_t flags = USART2->ISR;
+
+    if(flags & USART_ISR_RXNE) {
+        while(!(USART2->ISR & USART_ISR_TC));
+        USART2->TDR = USART2->RDR;
+    }
+
+    if(flags & USART_ISR_ORE) {
+        USART2->ICR = USART_ICR_ORECF;
+    }
+} 
+
+int main(void) {
+    // ENABLE PERIPHERALS CLOCKS
+    RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN_Msk;
+    RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOAEN_Pos);
+
+    // SET TX AND RX GPIO
+    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE2_Msk))
+        | (0b10 << GPIO_MODER_MODE2_Pos));
+    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE3_Msk))
+        | (0b10 << GPIO_MODER_MODE3_Pos));
+
+    GPIOA->AFR[0] = ((GPIOA->AFR[0] & (~GPIO_AFRL_AFSEL2_Msk))
+        | (7 << GPIO_AFRL_AFSEL2_Pos));
+    GPIOA->AFR[0] = ((GPIOA->AFR[0] & (~GPIO_AFRL_AFSEL3_Msk))
+        | (7 << GPIO_AFRL_AFSEL3_Pos));
+
+    // SET BAUDRATE AND ENABLE UART
+    USART2->BRR = 416; // 4 MHz / 9600
+    USART2->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+
+    // ENABLE RX INTERRUPT IN USART2 PERIPHERAL
+    USART2->CR1 |= USART_CR1_RXNEIE;
+
+
+    // ENABLE USART2 INTERRUPT
+    NVIC_ClearPendingIRQ(USART2_IRQn);
+    NVIC_EnableIRQ(USART2_IRQn);
+
+    main_blink();
     return 0;
 }
