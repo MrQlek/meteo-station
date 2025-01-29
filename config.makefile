@@ -28,6 +28,6 @@ COMPILATION_FLAGS += \
 	-Wuninitialized \
     -Werror
 
-# PROJECT_ONLY_FLAGS += -Wconversion
+PROJECT_ONLY_FLAGS += -Wconversion
 
 LD_FLAGS += -T"linker_script.ld"

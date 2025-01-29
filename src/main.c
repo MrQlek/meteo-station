@@ -1,177 +1,196 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include "stm32l4xx.h"
 
-#define _RCC_BASE (0x40021000)
-#define _RCC_AHB2ENR_OFFSET (0x4C)
-#define _RCC_AHB2ENR (*((volatile uint32_t*)(_RCC_BASE + _RCC_AHB2ENR_OFFSET)))
-#define _RCC_AHB2ENR_GPIOAEN_POS (0)
-#define _RCC_AHB2ENR_GPIOCEN_POS (2)
+#define _assert(x) ({x;})
+#define assert_pointer(x)
 
-#define _GPIO_MODER_OFFSET (0x00)
-#define _GPIO_ODR_OFFSET (0x14)
-#define _GPIO_IDR_OFFSET (0x10)
+#define CAT(a, b) a##b
+#define VERIFY_ENUM(x, _enum) (x < CAT(_enum,_LIMIT))
 
-#define _GPIO_MODE5_POS (10)
-#define _GPIO_MODE5_MASK (0b11 << _GPIO_MODE5_POS)
+static inline bool is_gpio_port_correct(const GPIO_TypeDef * const port) {
+    assert_pointer(port);
 
-#define _GPIO_MODE13_POS (26)
-#define _GPIO_MODE13_MASK (0b11 << _GPIO_MODE13_POS)
+    if(port == GPIOA) {
+        return true;
+    }
+    if(port == GPIOB) {
+        return true;
+    }
+    if(port == GPIOC) {
+        return true;
+    }
+    if(port == GPIOD) {
+        return true;
+    }
+    if(port == GPIOE) {
+        return true;
+    }
+    if(port == GPIOF) {
+        return true;
+    }
+    if(port == GPIOG) {
+        return true;
+    }
+    if(port == GPIOH) {
+        return true;
+    }
+    return false;
+}
 
-#define _GPIOA_BASE (0x48000000)
-#define _GPIOA_MODER (*((volatile uint32_t*)(_GPIOA_BASE + _GPIO_MODER_OFFSET)))
-#define _GPIOA_ODR (*((volatile uint32_t*)(_GPIOA_BASE + _GPIO_ODR_OFFSET)))
+static inline bool is_gpio_pin_correct(const GPIO_TypeDef * const port,
+    const uint8_t pin) {
 
-#define _GPIOC_BASE (0x48000800)
-#define _GPIOC_MODER (*((volatile uint32_t*)(_GPIOC_BASE + _GPIO_MODER_OFFSET)))
-#define _GPIOC_ODR (*((volatile uint32_t*)(_GPIOC_BASE + _GPIO_ODR_OFFSET)))
-#define _GPIOC_IDR (*((const volatile uint32_t*)(_GPIOC_BASE + _GPIO_IDR_OFFSET)))
+    assert_pointer(port);
+
+    if(port == GPIOH) {
+        return (pin <= 2);
+    }
+
+    return (pin <= 15);
+
+}
+
+typedef enum {
+    GPIO_MODE_INPUT = 0x00, 
+    GPIO_MODE_OUTPUT = 0x01,
+    GPIO_MODE_ALTERNATE_FUNCTION = 0x02,
+    GPIO_MODE_ANALOG = 0x03,
+    gpio_mode_t_LIMIT
+} gpio_mode_t;
+
+void gpio_set_mode(GPIO_TypeDef * port, uint8_t pin, gpio_mode_t mode) {
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
+    _assert(VERIFY_ENUM(mode, gpio_mode_t));
+
+    const uint32_t moder_possition = pin * 2;
+    const uint32_t moder_mask = 0b11 << moder_possition;
+
+    port->MODER = ((port->MODER & (~moder_mask))
+        | (mode << moder_possition));    
+} 
+
+typedef enum {
+    GPIO_STATE_LOW = 0x00,
+    GPIO_STATE_HIGH = 0x01,
+    gpio_state_t_LIMIT
+} gpio_state_t;
+
+void gpio_set_state(GPIO_TypeDef * port, uint8_t pin, gpio_state_t state) {
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
+    _assert(VERIFY_ENUM(state, gpio_state_t));
+
+    uint32_t pin_mask = 0x01 << pin;
+    port->ODR = ((port->ODR & (~pin_mask))
+        | state << pin);
+}
+
+gpio_state_t gpio_read_state(GPIO_TypeDef * port, uint8_t pin) {
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
+
+    if((port->IDR >> pin) & 0x01) {
+        return GPIO_STATE_HIGH;
+    }
+    return GPIO_STATE_LOW;
+}
+
+typedef enum {
+    GPIO_ALTERNATE_FUNCTION_A2_USART2_TX = 0x07,
+    GPIO_ALTERNATE_FUNCTION_A3_USART2_RX = 0x07,
+} gpio_alternate_function_t;
+
+void gpio_set_alternate_function(GPIO_TypeDef * port, uint8_t pin, 
+    gpio_alternate_function_t alternate_function) {
+
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
 
 
+    if(pin < 8) {
+        const uint8_t alternate_function_possition = pin * 4;
+        const uint32_t alternate_function_mask = (uint32_t)(0b1111) << alternate_function_possition;
+
+        port->AFR[0] = 
+            ((port->AFR[0] & (~alternate_function_mask))
+                | (alternate_function << alternate_function_possition));
+    } else {
+        const uint8_t alternate_function_possition = (uint8_t)((pin - 8) * 4); 
+        const uint32_t alternate_function_mask = (uint32_t)(0b1111) << alternate_function_possition;
+    
+        port->AFR[1] = 
+            ((port->AFR[1] & (~alternate_function_mask))
+                | (alternate_function << alternate_function_possition));
+    }
+}
+
+typedef enum {
+    GPIO_PULL_NONE = 0b00,
+    GPIO_PULL_UP = 0b01,
+    GPIO_PULL_DOWN = 0b10,
+    gpio_pull_t_LIMIT
+} gpio_pull_t;
+
+void gpio_set_pull_type(GPIO_TypeDef * port, uint8_t pin, 
+    const gpio_pull_t pull) {
+    
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
+    _assert(VERIFY_ENUM(pull, gpio_pull_t));
+
+
+    const uint32_t pull_possition = pin * 2;
+    const uint32_t pull_mask = 0b11 << pull_possition;
+
+    port->PUPDR = ((port->PUPDR & (~pull_mask))
+        | (pull << pull_possition));
+}
+
+#define LED_PORT GPIOA
 #define LED_PIN 5
-#define LED_PIN_ODR_MASK (0x01 << LED_PIN)
-#define BUTTON_PIN 13
-#define BUTTON_PIN_IDR_MASK (0x01 << BUTTON_PIN)
 
-int main_blink_reg() {
-    // ENABLE PERIPHERAL CLOCKS
-    _RCC_AHB2ENR |= (1 << _RCC_AHB2ENR_GPIOAEN_POS);
+#define DEBUG_UART_TX_PORT GPIOA
+#define DEBUG_UART_TX_PIN 2
 
-    // SET GPIO MODE
-    _GPIOA_MODER = ((_GPIOA_MODER & (~_GPIO_MODE5_MASK))
-        | (0b01 << _GPIO_MODE5_POS)); 
+#define DEBUG_UART_RX_PORT GPIOA
+#define DEBUG_UART_RX_PIN 3
 
-    // SET GPIO STATE
-    while(1) {
-        _GPIOA_ODR ^= LED_PIN_ODR_MASK;
-
-        for (uint32_t i = 0; i < 1000000; i++);
-    }
-    return 0;
-}
-
-int main_button_reg() {
-    _RCC_AHB2ENR |= (1 << _RCC_AHB2ENR_GPIOAEN_POS);
-    _RCC_AHB2ENR |= (1 << _RCC_AHB2ENR_GPIOCEN_POS);
-
-    _GPIOA_MODER = ((_GPIOA_MODER & (~_GPIO_MODE5_MASK))
-        | (0x01 << _GPIO_MODE5_POS));
-    _GPIOC_MODER = ((_GPIOC_MODER & (~_GPIO_MODE13_MASK))
-        | (0x00 << _GPIO_MODE13_POS));
-
-    while (1) {
-        uint8_t button_state = (_GPIOC_IDR >> BUTTON_PIN) & 0x01;
-
-        _GPIOA_ODR = ((_GPIOA_ODR & (~LED_PIN_ODR_MASK))
-            | (button_state << LED_PIN));
-
-    }
-    return 0;
-}
-
-int main_blink() {
+int main() {
     RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOAEN_Pos);
-
-    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE5_Msk))                  
-        | (0x01 << GPIO_MODER_MODE5_Pos));
-
-    while(1) {                                                                
-        GPIOA->ODR ^= LED_PIN_ODR_MASK;
-        for (uint32_t i = 0; i < 1000000; i++);                             
-    }    
-    return 0;
-}
-
-int main_button() {
-    RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOAEN_Pos);                           
-    RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOCEN_Pos);
-
-    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE5_Msk)) 
-        | (0x01 << GPIO_MODER_MODE5_Pos));
-    GPIOC->MODER = ((GPIOC->MODER & (~GPIO_MODER_MODE13_Msk)) 
-        | (0x00 << GPIO_MODER_MODE13_Pos));
-
-    while(1) {
-        uint8_t button_state = (GPIOC->IDR & BUTTON_PIN_IDR_MASK) >> BUTTON_PIN;
-        GPIOA->ODR = ((GPIOA->ODR & (~LED_PIN_ODR_MASK))
-            | ((button_state) << LED_PIN));
-    }
-    return 0;
-}
-
-int main_uart_tx() {
-    // ENABLE PERIPHERALS CLOCKS
     RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN_Msk;
-    RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOAEN_Pos);
 
-    // SET TX AND RX GPIO
-    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE2_Msk))
-        | (0b10 << GPIO_MODER_MODE2_Pos));
-    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE3_Msk))
-        | (0b10 << GPIO_MODER_MODE3_Pos));
+    gpio_set_mode(LED_PORT, LED_PIN, GPIO_MODE_OUTPUT);
 
-    GPIOA->AFR[0] = ((GPIOA->AFR[0] & (~GPIO_AFRL_AFSEL2_Msk))
-        | (7 << GPIO_AFRL_AFSEL2_Pos));
-    GPIOA->AFR[0] = ((GPIOA->AFR[0] & (~GPIO_AFRL_AFSEL3_Msk))
-        | (7 << GPIO_AFRL_AFSEL3_Pos));
+    // INIT GPIO FOR UART
+    gpio_set_mode(DEBUG_UART_TX_PORT, DEBUG_UART_TX_PIN,
+        GPIO_MODE_ALTERNATE_FUNCTION);
+    gpio_set_mode(DEBUG_UART_RX_PORT, DEBUG_UART_RX_PIN,
+        GPIO_MODE_ALTERNATE_FUNCTION);
 
-    // SET BAUDRATE AND ENABLE UART
+    gpio_set_alternate_function(DEBUG_UART_TX_PORT, DEBUG_UART_TX_PIN, 
+        GPIO_ALTERNATE_FUNCTION_A2_USART2_TX);
+    gpio_set_alternate_function(DEBUG_UART_RX_PORT, DEBUG_UART_RX_PIN,
+        GPIO_ALTERNATE_FUNCTION_A3_USART2_RX);    
+
+    // INIT UART
     USART2->BRR = 416; // 4 MHz / 9600
-    USART2->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+    USART2->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;    
 
-    // SEND "HELLO WORLD"
+    gpio_state_t led_state = GPIO_STATE_LOW;
 
     while(1) {
+        led_state = (led_state == GPIO_STATE_LOW) ? GPIO_STATE_HIGH : GPIO_STATE_LOW;
+        gpio_set_state(LED_PORT, LED_PIN, led_state);
+
         char text[] = "hello world \r\n";
         for(int i = 0; text[i] != 0; i++) {
             USART2->TDR = text[i];
             while(!(USART2->ISR & USART_ISR_TC));
         }
-        for (uint32_t i = 0; i < 1000000; i++);
+
+        for(volatile int i = 0; i < 1000000; i++);
     }
-    return 0;
-}
-
-void usart2_irq_handler() {
-    uint32_t flags = USART2->ISR;
-
-    if(flags & USART_ISR_RXNE) {
-        while(!(USART2->ISR & USART_ISR_TC));
-        USART2->TDR = USART2->RDR;
-    }
-
-    if(flags & USART_ISR_ORE) {
-        USART2->ICR = USART_ICR_ORECF;
-    }
-} 
-
-int main(void) {
-    // ENABLE PERIPHERALS CLOCKS
-    RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN_Msk;
-    RCC->AHB2ENR |= (1 << RCC_AHB2ENR_GPIOAEN_Pos);
-
-    // SET TX AND RX GPIO
-    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE2_Msk))
-        | (0b10 << GPIO_MODER_MODE2_Pos));
-    GPIOA->MODER = ((GPIOA->MODER & (~GPIO_MODER_MODE3_Msk))
-        | (0b10 << GPIO_MODER_MODE3_Pos));
-
-    GPIOA->AFR[0] = ((GPIOA->AFR[0] & (~GPIO_AFRL_AFSEL2_Msk))
-        | (7 << GPIO_AFRL_AFSEL2_Pos));
-    GPIOA->AFR[0] = ((GPIOA->AFR[0] & (~GPIO_AFRL_AFSEL3_Msk))
-        | (7 << GPIO_AFRL_AFSEL3_Pos));
-
-    // SET BAUDRATE AND ENABLE UART
-    USART2->BRR = 416; // 4 MHz / 9600
-    USART2->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
-
-    // ENABLE RX INTERRUPT IN USART2 PERIPHERAL
-    USART2->CR1 |= USART_CR1_RXNEIE;
-
-
-    // ENABLE USART2 INTERRUPT
-    NVIC_ClearPendingIRQ(USART2_IRQn);
-    NVIC_EnableIRQ(USART2_IRQn);
-
-    main_blink();
     return 0;
 }
