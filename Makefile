@@ -1,5 +1,5 @@
 .SUFFIXES:				
-.PHONY: all meteo 
+.PHONY: all meteo flash
 
 all: meteo
 
@@ -38,8 +38,7 @@ LD_FLAGS          	=
 
 
 FLASH_ADDRESS = 0x08000000
-UNIX_TIMESTAMP = \"time$(shell date +%s)\"
-DATETIME = \"$(shell date --rfc-3339='seconds' |  sed 's/ /,/g')\"
+DATETIME := \"$(shell date --rfc-3339='seconds' |  sed 's/ /,/g')\"
 OBJS =
 
 ####################################################################
@@ -114,7 +113,8 @@ $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
 	@mkdir -p $@
 
-$(OUTPUT_DIR)/%.o: %.c
+$(OUTPUT_DIR)/vendor/%.o: vendor/%.c
+	@mkdir -p `dirname $@`
 	@echo 'Building $<'
 	$(ECHO)$(CC) $(CFLAGS) -c -o $@ $<
 

@@ -1,0 +1,6 @@
+INCLUDES += \
+    -Isrc/utils
+
+UTILS_SOURCE = 
+
+C_SOURCE_FILES += $(UTILS_SOURCE)

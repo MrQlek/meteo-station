@@ -9,13 +9,12 @@ C_FLAGS += \
  --specs=nano.specs \
  -g
 
-
-# linker file added in main Makefile
 LD_FLAGS += \
  -mcpu=cortex-m4 \
  -mthumb \
     --specs=nano.specs \
     --specs=nosys.specs 
+LD_FLAGS += -T"linker_script.ld"
 
 COMPILATION_FLAGS += \
     -Wall \
@@ -29,5 +28,3 @@ COMPILATION_FLAGS += \
     -Werror
 
 PROJECT_ONLY_FLAGS += -Wconversion
-
-LD_FLAGS += -T"linker_script.ld"
