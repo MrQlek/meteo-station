@@ -8,4 +8,10 @@
 
 #define VERIFY_ENUM(x, _enum) (x < CAT(_enum,_LIMIT))
 
+#define MUT
+
+#define UNUSED_PARAM            __attribute__((unused))
+
+#define ARRAY_INIT_ALL_ZEROS {}
+
 #endif // !__LANG_UTILS_H__
