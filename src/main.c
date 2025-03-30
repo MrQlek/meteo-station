@@ -106,6 +106,23 @@ static byte_result_t spi_write_and_read_byte(const uint8_t byte_to_write) {
     };
 }
 
+typedef enum PACKED {
+    BME280_REGISTER_ADDRESS_ID = 0x50,
+} bme280_register_address_t;
+ASSERT(sizeof(bme280_register_address_t) == 1);
+
+byte_result_t bme280_read_single(const bme280_register_address_t address) {
+    gpio_set_state(WEATHER_SENSOR_SPI_CS_PORT, WEATHER_SENSOR_SPI_CS_PIN, 
+        GPIO_STATE_LOW);
+
+    spi_write_and_read_byte(address | 0x80);
+    byte_result_t result =  spi_write_and_read_byte(0x00);
+
+    gpio_set_state(WEATHER_SENSOR_SPI_CS_PORT, WEATHER_SENSOR_SPI_CS_PIN, 
+        GPIO_STATE_HIGH);
+
+    return result;
+}
 
 int main() {
     clocks_init();
@@ -120,20 +137,16 @@ int main() {
 
     INFO("FW VERSION %s, build at %s", FW_VERSION, DATETIME);
 
-    uint8_t spi_tx_data = 0;
     while(1) {
         led_state = (led_state == GPIO_STATE_LOW) ? GPIO_STATE_HIGH : GPIO_STATE_LOW;
         gpio_set_state(LED_PORT, LED_PIN, led_state);
 
         OUT("hello world");
-        byte_result_t spi_result = spi_write_and_read_byte(spi_tx_data);
+        byte_result_t spi_result = bme280_read_single(BME280_REGISTER_ADDRESS_ID);
 
-        OUT("SPI STATUS: %d, TX BYTE: %d, RX BYTE: %d",
+        OUT("SPI STATUS: %d, RX BYTE: 0x%X",
             spi_result.result,
-            spi_tx_data,
             spi_result.value);
-
-        spi_tx_data++;
 
         delay_ms(1000);
     }
