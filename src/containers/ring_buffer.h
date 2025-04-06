@@ -11,7 +11,6 @@ typedef struct {
     const uint16_t maxlen;
 } ring_buffer_t;
 
-#define NELEMS(a) ((int)(sizeof(a)/sizeof((a)[0])))
 #define RING_BUFFER(_storage) (ring_buffer_t) { \
     .storage = _storage, \
     .head = 0, \

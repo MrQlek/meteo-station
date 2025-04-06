@@ -14,4 +14,6 @@
 
 #define ARRAY_INIT_ALL_ZEROS {}
 
+#define NELEMS(a) ((int)(sizeof(a)/sizeof((a)[0])))
+
 #endif // !__LANG_UTILS_H__
