@@ -18,4 +18,11 @@ typedef struct {
     .result = _result, \
 }
 
+#define PROPAGATE_ERROR(_val) { \
+    result_t _res = _val; \
+    if(_res != RESULT_OK) { \
+        return _res; \
+    } \
+}
+
 #endif // !__RESULTS_H__
