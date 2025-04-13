@@ -26,6 +26,10 @@ void clocks_switch_peripheral_clock(clock_t clock, clock_state_t target_state) {
             RCC->AHB2ENR = (RCC->AHB2ENR & (~RCC_AHB2ENR_GPIOBEN_Msk))
                 | target_state << RCC_AHB2ENR_GPIOBEN_Pos;
             break;
+        case CLOCK_GPIOC:
+            RCC->AHB2ENR = (RCC->AHB2ENR & (~RCC_AHB2ENR_GPIOCEN_Msk))
+                | target_state << RCC_AHB2ENR_GPIOCEN_Pos;
+            break;
         case CLOCK_USART2:
             RCC->APB1ENR1 = (RCC->APB1ENR1 & (~RCC_APB1ENR1_USART2EN_Msk))
                 | target_state << RCC_APB1ENR1_USART2EN_Pos;
@@ -34,9 +38,16 @@ void clocks_switch_peripheral_clock(clock_t clock, clock_state_t target_state) {
             RCC->APB2ENR = (RCC->APB2ENR & (~RCC_APB2ENR_SPI1EN_Msk))
                 | target_state << RCC_APB2ENR_SPI1EN_Pos;
             break;
+        case CLOCK_ADC:
+            RCC->AHB2ENR = (RCC->AHB2ENR & (~RCC_AHB2ENR_ADCEN_Msk))
+                | target_state << RCC_AHB2ENR_ADCEN_Pos;
 
         default:
             _assert(0);
             break;
     }
+}
+
+void clocks_switch_adc_clock_to_system_clock() {
+    RCC->CCIPR |= 0b11 << RCC_CCIPR_ADCSEL_Pos;
 }

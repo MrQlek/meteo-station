@@ -68,3 +68,15 @@ void gpio_set_pull_type(GPIO_TypeDef * port, uint8_t pin,
     port->PUPDR = ((port->PUPDR & (~pull_mask))
         | (pull << pull_possition));
 }
+
+void gpio_set_adc_connection(GPIO_TypeDef * port, uint8_t pin, 
+    const gpio_adc_connection_t connection) {
+
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
+    _assert(VERIFY_ENUM(connection, gpio_adc_connection_t));
+
+    const uint32_t connection_mask = 0b1 << pin;
+    port->ASCR = ((port->ASCR & (~connection_mask))
+        | (connection << pin));
+}

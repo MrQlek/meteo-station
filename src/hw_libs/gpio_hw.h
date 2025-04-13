@@ -36,6 +36,12 @@ typedef enum {
     gpio_pull_t_LIMIT
 } gpio_pull_t;
 
+typedef enum {
+    GPIO_ADC_CONNECTION_DISABLED = 0b0,
+    GPIO_ADC_CONNECTION_ENABLED = 0b1,
+    gpio_adc_connection_t_LIMIT
+} gpio_adc_connection_t;
+
 extern void gpio_set_mode(GPIO_TypeDef * port, uint8_t pin, gpio_mode_t mode);
 
 extern void gpio_set_state(GPIO_TypeDef * port, uint8_t pin, gpio_state_t state);
@@ -45,6 +51,8 @@ extern void gpio_set_alternate_function(GPIO_TypeDef * port, uint8_t pin,
     gpio_alternate_function_t alternate_function);
 extern void gpio_set_pull_type(GPIO_TypeDef * port, uint8_t pin, 
     const gpio_pull_t pull);
+extern void gpio_set_adc_connection(GPIO_TypeDef * port, uint8_t pin, 
+    const gpio_adc_connection_t connection);
 
 static inline bool is_gpio_port_correct(const GPIO_TypeDef * const port) {
     assert_pointer(port)
