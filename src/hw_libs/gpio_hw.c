@@ -80,3 +80,13 @@ void gpio_set_adc_connection(GPIO_TypeDef * port, uint8_t pin,
     port->ASCR = ((port->ASCR & (~connection_mask))
         | (connection << pin));
 }
+
+void gpio_set_output_type(GPIO_TypeDef * port, uint8_t pin, gpio_output_type_t type) {
+    _assert(is_gpio_port_correct(port));
+    _assert(is_gpio_pin_correct(port, pin));
+    _assert(VERIFY_ENUM(type, gpio_output_type_t));
+
+    uint32_t pin_mask = 0x01 << pin;
+    port->OTYPER = ((port->OTYPER & (~pin_mask))
+        | (type << pin));
+}

@@ -37,6 +37,10 @@ void clocks_switch_peripheral_clock(clock_t clock, clock_state_t target_state) {
         case CLOCK_SPI1:
             RCC->APB2ENR = (RCC->APB2ENR & (~RCC_APB2ENR_SPI1EN_Msk))
                 | target_state << RCC_APB2ENR_SPI1EN_Pos;
+            break;        
+        case CLOCK_I2C1:
+            RCC->APB1ENR1 = (RCC->APB1ENR1 & (~RCC_APB1ENR1_I2C1EN_Msk))
+                | target_state << RCC_APB1ENR1_I2C1EN_Pos;
             break;
         case CLOCK_ADC:
             RCC->AHB2ENR = (RCC->AHB2ENR & (~RCC_AHB2ENR_ADCEN_Msk))

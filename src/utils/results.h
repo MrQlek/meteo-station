@@ -6,6 +6,7 @@
 typedef enum {
     RESULT_OK = 0,
     RESULT_GENERIC_ERROR = 1,
+    RESULT_TIMEOUT_ERROR = 2,
 } result_t;
 
 typedef struct {

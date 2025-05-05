@@ -27,4 +27,10 @@
 #define LIGHT_SENSOR_PORT GPIOC
 #define LIGHT_SENSOR_PIN  0
 
+#define LCD_I2C_SCL_PORT GPIOB
+#define LCD_I2C_SCL_PIN 8
+
+#define LCD_I2C_SDA_PORT GPIOB
+#define LCD_I2C_SDA_PIN 9
+
 #endif // !__IO_PINS_H__

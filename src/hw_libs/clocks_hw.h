@@ -9,6 +9,7 @@ typedef enum {
     CLOCK_GPIOC,
     CLOCK_USART2,
     CLOCK_SPI1,
+    CLOCK_I2C1,
     CLOCK_ADC,
     clock_t_LIMIT
 } clock_t;
