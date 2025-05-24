@@ -26,4 +26,12 @@ typedef struct {
     } \
 }
 
+#define PROPAGATE_ERROR_AS(_val, _error) { \
+    result_t _res = _val; \
+    if(_res != RESULT_OK) { \
+        return _error; \
+    } \
+}
+
+
 #endif // !__RESULTS_H__
