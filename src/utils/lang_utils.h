@@ -20,4 +20,6 @@
 
 #define UNUSED(variable) ((void) (variable))
 
+#define MIN(a, b) (a < b ? a : b)
+
 #endif // !__LANG_UTILS_H__
